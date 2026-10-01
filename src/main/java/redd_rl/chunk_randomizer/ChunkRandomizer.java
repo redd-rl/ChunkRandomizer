@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 
 public class ChunkRandomizer implements ModInitializer {
-    int totalRandomBlocks = 3;
+    int totalRandomBlocks = 1;
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {

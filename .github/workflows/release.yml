@@ -1,15 +1,16 @@
-name: Build Mod
+name: Publish Release
 
 on:
   push:
-    branches:
-      - main
-      - master
-  pull_request:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,12 +29,15 @@ jobs:
       - name: Grant Execute Permission for Gradle Wrapper
         run: chmod +x gradlew
 
-      - name: Build Mod with Gradle
+      - name: Build Mod Jars
         run: ./gradlew build --stacktrace
 
-      - name: Upload Built Jar Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release and Upload Jars
+        uses: softprops/action-gh-release@v2
         with:
-          name: Mod-Artifacts
-          path: build/libs/*.jar
-          retention-days: 7
+          files: build/libs/*.jar
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
