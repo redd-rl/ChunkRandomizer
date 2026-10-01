@@ -3,19 +3,24 @@ package redd_rl.chunk_randomizer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gamerules.GameRules;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ChunkRandomizer implements ModInitializer {
     int totalRandomBlocks = 1;
+
+    private List<Block> safeBlockPool = null;
+
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
@@ -23,7 +28,19 @@ public class ChunkRandomizer implements ModInitializer {
                 ServerLevel level = player.level();
                 ChunkPos currentChunk = player.chunkPosition();
 
+                GlobalPos spawnPos = level.getRespawnData().globalPos();
+                Vec3i spawnPosVec = new Vec3i(spawnPos.pos().getX(), spawnPos.pos().getY(), spawnPos.pos().getZ());
+
+                int spawnRadius = level.getGameRules().get(GameRules.RESPAWN_RADIUS);
+
                 RandomizedChunkStateTracker state = level.getDataStorage().computeIfAbsent(RandomizedChunkStateTracker.TYPE);
+
+                if (player.blockPosition().distSqr(spawnPosVec) < spawnRadius * spawnRadius) {
+                    if (!state.isRandomized(currentChunk)) {
+                        state.markRandomized(currentChunk);
+                    }
+                    continue;
+                }
 
                 if (!state.isRandomized(currentChunk)) {
                     state.markRandomized(currentChunk);
@@ -34,10 +51,15 @@ public class ChunkRandomizer implements ModInitializer {
     }
 
     private Block fetchRandomBlock(ServerLevel level) {
-        Block randomBlock = BuiltInRegistries.BLOCK.getRandom(level.getRandom())
-                .map(Holder::value)
-                .orElse(Blocks.DIRT); // intellij i don't care that i can just return this sthis looks NICER!
-        return randomBlock;
+        if (this.safeBlockPool == null) {
+            this.safeBlockPool = BlockPoolGenerator.createSafeBlockPool(level);
+        }
+
+        if (this.safeBlockPool.isEmpty()) {
+            return Blocks.DIRT;
+        }
+        int randomIndex = level.getRandom().nextInt(this.safeBlockPool.size());
+        return this.safeBlockPool.get(randomIndex);
     }
 
     private void randomizeChunk(ServerLevel level, ChunkPos chunkPos) {
