@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "chunk_randomizer",
+  "version": "${version}",
+  "name": "Chunk Randomizer",
+  "description": "Minecraft, but every chunk is random!",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/chunk_randomizer/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "redd_rl.chunk_randomizer.client.ChunkRandomizerDataGenerator"
+    ],
+    "client": [
+      "redd_rl.chunk_randomizer.client.ChunkRandomizerClient"
+    ],
+    "main": [
+      "redd_rl.chunk_randomizer.ChunkRandomizer"
+    ]
+  },
+  "mixins": [
+    "chunk_randomizer.mixins.json",
+    {
+      "config": "chunk_randomizer.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
